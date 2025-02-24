@@ -6,8 +6,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
-import com.nocountry.quo.model.User;
-import com.nocountry.quo.model.UserLoginRequestDto;
+import com.nocountry.quo.model.User.User;
+import com.nocountry.quo.model.User.UserLoginRequestDto;
 import com.nocountry.quo.security.JWTTokenDto;
 import com.nocountry.quo.security.JWTTokenService;
 

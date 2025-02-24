@@ -1,4 +1,4 @@
-package com.nocountry.quo.model;
+package com.nocountry.quo.model.User;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

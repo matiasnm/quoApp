@@ -3,7 +3,7 @@ package com.nocountry.quo.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.nocountry.quo.model.UserResponseDto;
+import com.nocountry.quo.model.User.UserResponseDto;
 import com.nocountry.quo.service.UserService;
 
 import org.springframework.security.access.prepost.PreAuthorize;

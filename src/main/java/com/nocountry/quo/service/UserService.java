@@ -1,6 +1,6 @@
 package com.nocountry.quo.service;
 
-import com.nocountry.quo.model.UserResponseDto;
+import com.nocountry.quo.model.User.UserResponseDto;
 import com.nocountry.quo.repository.UserRepository;
 
 import org.springframework.stereotype.Service;
