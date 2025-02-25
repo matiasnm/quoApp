@@ -1,5 +1,13 @@
+### NO SUBIR:
+- CARPETA DE COMPILACION! 
+/target
+- CARPETA DE MAVEN
+.mvn
+- CARPETAS DE IDE
+.idea
+.vscode
 
-HAY 3 USUARIOS EN LA BD 
+## HAY 3 USUARIOS EN LA BD 
 
 alice   → Contraseña: password123
 
