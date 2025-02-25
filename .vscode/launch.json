@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-QuoApplication<quo>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.nocountry.quo.QuoApplication",
+            "projectName": "quo",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
