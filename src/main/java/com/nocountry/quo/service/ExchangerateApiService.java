@@ -29,6 +29,8 @@ public class ExchangerateApiService {
 
         try {
             ResponseEntity<RatesRespondDto> response = restTemplate.getForEntity(finalUrl, RatesRespondDto.class);
+            logger.info("Success fetch exchange rate:");
+            System.err.println("Success fetch! exchange rates");
             return response;
         } catch (Exception e) {
             // Log the error to see details
