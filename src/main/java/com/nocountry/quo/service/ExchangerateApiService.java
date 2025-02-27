@@ -1,5 +1,6 @@
 package com.nocountry.quo.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -21,8 +22,15 @@ public class ExchangerateApiService {
 
         String finalUrl = String.format(apiUrl, apiKey);
 
-        ResponseEntity<RatesRespondDto> response = restTemplate.getForEntity(finalUrl, RatesRespondDto.class);
-        return response;
+        try {
+            ResponseEntity<RatesRespondDto> response = restTemplate.getForEntity(finalUrl, RatesRespondDto.class);
+            return response;
+        } catch (Exception e) {
+            // Log the error to see details
+            System.err.println("Error fetching exchange rates: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+  
+        }
     }
 
 }
