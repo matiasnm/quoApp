@@ -14,10 +14,11 @@ import java.util.List;
 @Table(name = "\"users\"")
 @Entity(name = "User")
 @Getter
+@Setter  // Lombok se encarga de generar los getters y setters automáticamente
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class User implements UserDetails{
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
@@ -36,13 +37,14 @@ public class User implements UserDetails{
     @Column(name = "mail")
     private String mail;
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    // Campo añadido para almacenar el teléfono del usuario
+    @Column(name = "phone")
+    private String phone;  // Aquí agregamos el campo para el teléfono
 
-    public void setMail(String mail) {
-        this.mail = mail;
-    }
+    // Campo añadido para almacenar la URL del avatar del usuario
+    @Column(name = "avatar")
+    private String avatar;  // Aquí agregamos el campo para el avatar
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
