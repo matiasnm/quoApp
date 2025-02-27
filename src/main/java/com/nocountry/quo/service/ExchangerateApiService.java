@@ -28,16 +28,23 @@ public class ExchangerateApiService {
         String finalUrl = String.format(apiUrl, apiKey);
 
         try {
+            // Realizar la solicitud a la API
             ResponseEntity<RatesRespondDto> response = restTemplate.getForEntity(finalUrl, RatesRespondDto.class);
-            logger.info("Success fetch exchange rate:");
-            System.err.println("Success fetch! exchange rates");
-            return response;
+            // Comprobar si la respuesta tiene datos
+            if (response.getBody() != null) {
+                logger.info("Success fetch exchange rates:");
+                // Devuelve una respuesta OK con los datos de la API
+                return ResponseEntity.ok(response.getBody());
+            } else {
+                // Si no hay cuerpo en la respuesta, devolvemos error
+                logger.error("Error: No data in exchange rates response");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
         } catch (Exception e) {
-            // Log the error to see details
+            // En caso de error, logueamos y respondemos con error
             logger.error("Error fetching exchange rate: ", e);
             System.err.println("Error fetching exchange rates: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-  
         }
     }
 
