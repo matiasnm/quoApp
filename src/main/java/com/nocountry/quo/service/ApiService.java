@@ -27,7 +27,7 @@ public class ApiService {
 
     public ResponseEntity<List<CoinsResponseDto>> getCryptoData() {
         
-        List<String> customCryptos = Arrays.asList("bitcoin", "ethereum", "litecoin");
+        List<String> customCryptos = Arrays.asList("binancecoin", "polkadot", "bitcoin", "ethereum", "litecoin", "solana", "cardano", "tether", "ripple", "dai");
         String ids = String.join(",", customCryptos);
 
         String params = "?vs_currency=usd&ids=" + ids + "&order=market_cap_desc&per_page=" 
