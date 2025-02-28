@@ -3,6 +3,7 @@ package com.nocountry.quo.model.ExchangerateApi;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.nocountry.quo.model.Enums.LocalCurrency;
 
@@ -11,6 +12,7 @@ public record RatesRespondDto(
 
     Long time_last_update_unix,
 
+    @JsonProperty("conversion_rates")
     @JsonDeserialize(using = LocalCurrencyDeserializer.class)
     Map<LocalCurrency, Double> conversion_rates
 ) {}
