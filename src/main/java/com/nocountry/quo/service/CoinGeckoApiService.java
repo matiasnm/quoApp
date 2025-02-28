@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 
 @AllArgsConstructor
 @Service
-public class ApiService {
+public class CoinGeckoApiService {
     // Si la API requiere alguna clave de API o configuración especial.
    // @Value("${api.ejemplo.url}") se comenta esta linea para que no se rompa el proyecto durante el desarrollo
    
