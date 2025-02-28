@@ -13,6 +13,7 @@ import com.nocountry.quo.model.Enums.LocalCurrency;
 @Table(name = "exchange_rates")
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class ExchangeRates {
 
     @Id
