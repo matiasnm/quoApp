@@ -39,12 +39,15 @@ public class User implements UserDetails {
 
     // Campo añadido para almacenar el teléfono del usuario
     @Column(name = "phone")
-    private String phone;  // Aquí agregamos el campo para el teléfono
+    private String phone;
 
     // Campo añadido para almacenar la URL del avatar del usuario
     @Column(name = "avatar")
-    private String avatar;  // Aquí agregamos el campo para el avatar
+    private String avatar;
 
+    // Campo para marcar la cuenta como activa o inactiva
+    @Column(name = "active")
+    private boolean active = true; // Valor por defecto: true (activo)
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -78,6 +81,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return active; // La cuenta solo estará habilitada si está activa
     }
 }
