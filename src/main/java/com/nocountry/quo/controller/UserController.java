@@ -24,7 +24,6 @@ public class UserController {
     // Endpoint de registro de usuario
     @PostMapping("/register")
     public ResponseEntity<UserResponseDto> registerUser(@RequestBody UserRegistrationDto registrationDto) {
-
         // Usar el servicio de registro para registrar al nuevo usuario
         UserResponseDto userResponse = userRegistrationService.registerNewUser(
                 registrationDto.username(),
@@ -33,7 +32,6 @@ public class UserController {
                 registrationDto.phone(),
                 registrationDto.avatar()
         );
-
         // Retornar una respuesta con código 200 OK y el DTO del usuario registrado
         return ResponseEntity.ok(userResponse);
     }
@@ -46,19 +44,33 @@ public class UserController {
 
     // Actualizar el nombre y teléfono del usuario
     @PutMapping("/update")
-    public ResponseEntity<User> updateUser(
+    public ResponseEntity<UserResponseDto> updateUser(
             @RequestBody User user,
             @AuthenticationPrincipal User loggedInUser) {
-        return ResponseEntity.ok(userService.updateUserInfo(
-                loggedInUser.getId(), user.getUsername(), user.getPhone()));
+        // Actualizar los datos del usuario
+        User updatedUser = userService.updateUserInfo(
+                loggedInUser.getId(), user.getUsername(), user.getPhone());
+
+        // Convertir el usuario actualizado a un UserResponseDto
+        UserResponseDto userResponseDto = new UserResponseDto(updatedUser);
+
+        // Retornar una respuesta con código 200 OK y el DTO actualizado
+        return ResponseEntity.ok(userResponseDto);
     }
 
     // Actualizar el avatar del usuario
     @PutMapping("/update-avatar")
-    public ResponseEntity<User> updateAvatar(
+    public ResponseEntity<UserResponseDto> updateAvatar(
             @RequestParam String avatar,
             @AuthenticationPrincipal User loggedInUser) {
-        return ResponseEntity.ok(userService.updateAvatar(loggedInUser.getId(), avatar));
+        // Actualizar el avatar del usuario
+        User updatedUser = userService.updateAvatar(loggedInUser.getId(), avatar);
+
+        // Convertir el usuario actualizado a un UserResponseDto
+        UserResponseDto userResponseDto = new UserResponseDto(updatedUser);
+
+        // Retornar una respuesta con código 200 OK y el DTO actualizado
+        return ResponseEntity.ok(userResponseDto);
     }
 
     // Modificar la cuenta del usuario para marcarla como inactiva
