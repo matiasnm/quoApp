@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nocountry.quo.model.CoinGeckoApi.CoinsResponseDto;
-import com.nocountry.quo.service.ApiService;
+import com.nocountry.quo.service.CoinGeckoApiService;
 import java.util.*;
 
 import lombok.AllArgsConstructor;
@@ -14,9 +14,9 @@ import lombok.AllArgsConstructor;
 @RestController
 @RequestMapping("/coins")
 @AllArgsConstructor
-public class ApiController {
+public class CoinsController {
 
-    private final ApiService apiService;
+    private final CoinGeckoApiService apiService;
 
     @GetMapping("")
     public ResponseEntity<List<CoinsResponseDto>> get() {

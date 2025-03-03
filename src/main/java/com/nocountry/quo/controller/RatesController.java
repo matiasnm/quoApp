@@ -19,7 +19,7 @@ public class RatesController {
 
     @GetMapping("")
     public ResponseEntity<RatesRespondDto> get() {
-        return exchangerateApiService.getExchangeRate();
+        return exchangerateApiService.getLatestExchangeRates();
     }
     
 }
