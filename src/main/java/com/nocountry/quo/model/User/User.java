@@ -46,8 +46,10 @@ public class User implements UserDetails {
     private String avatar;
 
     // Campo para marcar la cuenta como activa o inactiva
-    @Column(name = "active")
-    private boolean active = true; // Valor por defecto: true (activo)
+    @Column(name = "active", nullable = false)
+    private Boolean active = true;  // Valor por defecto: true (activo)
+
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -81,6 +83,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return active; // La cuenta solo estará habilitada si está activa
+        return active == null || active; // La cuenta estará habilitada si 'active' es null o true
     }
 }

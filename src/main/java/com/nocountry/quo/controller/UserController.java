@@ -34,6 +34,7 @@ public class UserController {
         );
         // Retornar una respuesta con código 200 OK y el DTO del usuario registrado
         return ResponseEntity.ok(userResponse);
+
     }
 
     // Obtener los detalles del usuario
