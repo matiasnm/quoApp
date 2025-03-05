@@ -68,16 +68,13 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    // Método para eliminar la cuenta del usuario
     @Transactional
-    public void deactivateAccount(Long userId) {
+    public void deleteAccount(Long userId) {
         // Buscar al usuario en la base de datos
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Marcar el usuario como inactivo
-        user.setActive(false); // Cambiar el estado de la cuenta a inactiva
-
-        // Guardar los cambios en la base de datos
-        userRepository.save(user);
+        // Eliminar el usuario de la base de datos
+        userRepository.delete(user);
     }
-
 }
