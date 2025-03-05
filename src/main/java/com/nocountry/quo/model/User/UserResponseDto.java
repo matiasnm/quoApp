@@ -1,6 +1,6 @@
 package com.nocountry.quo.model.User;
 
-public record UserResponseDto (
+public record UserResponseDto(
         String username,
         String mail,
         String phone,
