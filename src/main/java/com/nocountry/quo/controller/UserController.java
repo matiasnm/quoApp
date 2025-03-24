@@ -3,8 +3,8 @@ package com.nocountry.quo.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.nocountry.quo.model.User.User;
 import com.nocountry.quo.model.User.UserResponseDto;
+import com.nocountry.quo.model.User.UserUpdateDto;
 import com.nocountry.quo.service.UserService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,33 +27,34 @@ public class UserController {
 
     // Obtener los detalles del usuario
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> get(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<UserResponseDto> get(
+        @PathVariable Long id,
+        @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(userService.read(id, userDetails));
     }
 
     // Actualizar el nombre y teléfono del usuario
     @PutMapping("/update")
-    public ResponseEntity<User> updateUser(
-            @RequestBody User user,
-            @AuthenticationPrincipal User loggedInUser) {
+    public ResponseEntity<UserResponseDto> updateUser(
+            @RequestBody UserUpdateDto userDto,
+            @AuthenticationPrincipal UserDetails userDetails) {
         // Actualizar solo el nombre y teléfono del usuario
-        return ResponseEntity.ok(userService.updateUserInfo(
-                loggedInUser.getId(), user.getUsername(), user.getPhone()));
+        return ResponseEntity.ok(userService.updateInfo(userDetails, userDto));
     }
 
     // Actualizar el avatar del usuario
     @PutMapping("/update-avatar")
-    public ResponseEntity<User> updateAvatar(
+    public ResponseEntity<UserResponseDto> updateAvatar(
             @RequestParam String avatar,
-            @AuthenticationPrincipal User loggedInUser) {
-        return ResponseEntity.ok(userService.updateAvatar(loggedInUser.getId(), avatar));
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(userService.updateAvatar(userDetails, avatar));
     }
 
-    // Dar de baja la cuenta del usuario
-    @DeleteMapping("/delete")
-    public ResponseEntity<Void> deleteAccount(@AuthenticationPrincipal User loggedInUser) {
-        userService.deleteAccount(loggedInUser.getId());
+    // Desactivar cuenta del usuario
+    @DeleteMapping("/deactivate")
+    public ResponseEntity<Void> deactivateAccount(@AuthenticationPrincipal UserDetails userDetails) {
+        userService.deactivateAccount(userDetails);
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,7 +1,7 @@
 package com.nocountry.quo.model.User;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -14,15 +14,15 @@ import java.util.List;
 @Table(name = "\"users\"")
 @Entity(name = "User")
 @Getter
-@Setter  // Lombok se encarga de generar los getters y setters automáticamente
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
-    @SequenceGenerator(name = "user_seq", sequenceName = "user_sequence", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "users_seq")
+    @SequenceGenerator(name = "users_seq", sequenceName = "users_sequence", allocationSize = 1)
     private Long id;
 
     @NotBlank
@@ -37,14 +37,14 @@ public class User implements UserDetails {
     @Column(name = "mail")
     private String mail;
 
-    // Campo añadido para almacenar el teléfono del usuario
     @Column(name = "phone")
-    private String phone;  // Aquí agregamos el campo para el teléfono
+    private String phone;
 
-    // Campo añadido para almacenar la URL del avatar del usuario
     @Column(name = "avatar")
-    private String avatar;  // Aquí agregamos el campo para el avatar
+    private String avatar;
 
+    @NotNull
+    private Boolean active = true;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

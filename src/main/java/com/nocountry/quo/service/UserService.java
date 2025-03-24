@@ -2,6 +2,7 @@ package com.nocountry.quo.service;
 
 import com.nocountry.quo.model.User.User;
 import com.nocountry.quo.model.User.UserResponseDto;
+import com.nocountry.quo.model.User.UserUpdateDto;
 import com.nocountry.quo.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -41,23 +42,30 @@ public class UserService {
     }
 
 
-    // Método para actualizar el nombre y teléfono del usuario
+    // Método para actualizar el nombre, mail y teléfono del usuario
     @Transactional
-    public User updateUserInfo(Long userId, String username, String phone) {
+    public UserResponseDto updateInfo(UserDetails userDetails, UserUpdateDto userDto) {
+
+        Long userId = ((User) userDetails).getId();
+
         // Buscar al usuario en la base de datos
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // Actualizar los campos de nombre y teléfono
-        user.setUsername(username);
-        user.setPhone(phone);
+        user.setUsername(userDto.username());
+        user.setPhone(userDto.phone());
+        user.setMail(userDto.mail());
 
         // Guardar los cambios en la base de datos
-        return userRepository.save(user);
+        return new UserResponseDto(userRepository.save(user));
     }
 
     // Método para actualizar el avatar del usuario
     @Transactional
-    public User updateAvatar(Long userId, String avatar) {
+    public UserResponseDto updateAvatar(UserDetails userDetails, String avatar) {
+
+        Long userId = ((User) userDetails).getId();
+
         // Buscar al usuario en la base de datos
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -65,16 +73,20 @@ public class UserService {
         user.setAvatar(avatar);
 
         // Guardar los cambios en la base de datos
-        return userRepository.save(user);
+        return new UserResponseDto(userRepository.save(user));
     }
 
     // Método para eliminar la cuenta del usuario
     @Transactional
-    public void deleteAccount(Long userId) {
+    public void deactivateAccount(UserDetails userDetails) {
+
+        Long userId = ((User) userDetails).getId();
+
         // Buscar al usuario en la base de datos
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Eliminar el usuario de la base de datos
-        userRepository.delete(user);
+        // Desactiva el usuario
+        user.setActive(false);
+        userRepository.save(user);
     }
 }
