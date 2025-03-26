@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import jakarta.servlet.FilterChain;
@@ -34,7 +35,8 @@ public class SecurityFilter extends OncePerRequestFilter {
             try {
                 var username = tokenService.getSubject(token);
                 if (username != null) {
-                    var user = userRepository.findByUsername(username);
+                    var user = userRepository.findByUsername(username)
+                        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
                     var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
