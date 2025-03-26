@@ -12,6 +12,8 @@ import java.util.List;
 @Table(name = "\"portfolios\"")
 @Entity(name = "Portfolio")
 @Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Portfolio {
 
     @Id
@@ -31,11 +33,7 @@ public class Portfolio {
         this.user = user;
         this.balance = 1000.0;
     }
-
-    public double getBalance() {
-        return balance;
-    }
-
+    
     public void setBalance(double balance) {
         this.balance = balance;
     }

@@ -1,20 +1,28 @@
 package com.nocountry.quo.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.nocountry.quo.model.CoinGeckoApi.CoinsResponseDto;
 import com.nocountry.quo.model.Enums.AssetSymbol;
-import com.nocountry.quo.model.Enums.LocalCurrency;
 import com.nocountry.quo.model.Enums.TransactionType;
+import com.nocountry.quo.model.ExchangeRates.ExchangeRates;
+import com.nocountry.quo.model.ExchangerateApi.RatesRespondDto;
+import com.nocountry.quo.model.Portfolio.AssetDetailDto;
+import com.nocountry.quo.model.Portfolio.PerformanceDto;
 import com.nocountry.quo.model.Portfolio.Portfolio;
+import com.nocountry.quo.model.Portfolio.PortfolioOverviewDto;
 import com.nocountry.quo.model.Transaction.Transaction;
+import com.nocountry.quo.model.Transaction.TransactionResponseDto;
+import com.nocountry.quo.model.User.User;
 import com.nocountry.quo.repository.PortfolioRepository;
-import com.nocountry.quo.repository.TransactionRepository;
 
 import lombok.*;
 
@@ -34,64 +42,213 @@ Representa el balance y la tenencia de activos
 */
 
     private PortfolioRepository portfolioRepository;
-    private TransactionRepository transactionRepository;
+    private final ExchangerateApiService exchangerateApiService;
+    private final CoinGeckoApiService apiService;
 
-/*
+    private ExchangeRates getExchangeRatesFromService() {
+        RatesRespondDto dto = exchangerateApiService.getLatestExchangeRates()
+            .getBody();
+        if (dto == null) {
+            throw new RuntimeException("Failed to retrieve exchange rates");
+        }
+        return new ExchangeRates(LocalDate.now(), dto.conversion_rates());
+    }
 
+    public List<TransactionResponseDto> getAllTransactions(UserDetails userDetails) {
+        Long userId = ((User) userDetails).getId();
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+            .orElseThrow(() -> new RuntimeException("Portfolio not found for user: " + userId));
+        return portfolio.getTransactions().stream()
+            .map(TransactionResponseDto::new)
+            .collect(Collectors.toList());
+    }
 
-    public double getCryptoBalance(AssetSymbol assetSymbol) {
-        return transactions.stream()
+    public Double getAssetBalance(AssetSymbol assetSymbol, UserDetails userDetails) {
+        Long userId = ((User) userDetails).getId();
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+            .orElseThrow(() -> new RuntimeException("Portfolio not found for user: " + userId));
+        return portfolio.getTransactions().stream()
             .filter(t -> t.getAsset().equals(assetSymbol))
             .mapToDouble(t -> t.getType() == TransactionType.BUY ? t.getQuantity() : -t.getQuantity())
             .sum();
     }
-
-    public double getTotalValue(Map<AssetSymbol, Double> marketPrices) {
-        double cryptoValue = transactions.stream()
-            .filter(t -> marketPrices.containsKey(t.getAsset()))
-            .mapToDouble(t -> getCryptoBalance(t.getAsset()) * marketPrices.get(t.getAsset()))
+    
+    public AssetDetailDto getAssetDetail(AssetSymbol assetSymbol, UserDetails userDetails) {
+        Long userId = ((User) userDetails).getId();
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+            .orElseThrow(() -> new RuntimeException("Portfolio not found for user: " + userId));
+        
+        List<Transaction> assetTransactions = portfolio.getTransactions().stream()
+            .filter(t -> t.getAsset().equals(assetSymbol))
+            .toList();
+        
+        double balance = assetTransactions.stream()
+            .mapToDouble(t -> t.getType() == TransactionType.BUY ? t.getQuantity() : -t.getQuantity())
             .sum();
-        return balance + cryptoValue;
-    }    
+        
+        List<TransactionResponseDto> responseDtos = assetTransactions.stream()
+            .map(TransactionResponseDto::new)
+            .toList();
+        
+        return new AssetDetailDto(assetSymbol, balance, responseDtos);
+    }
 
-    public Portfolio buyCrypto(Long portfolioId, AssetSymbol assetSymbol, double quantity, double pricePerUnit) {
-        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+    public PerformanceDto getPerformance(UserDetails userDetails) {
+        Long userId = ((User) userDetails).getId();
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
             .orElseThrow(() -> new RuntimeException("Portfolio not found"));
 
-        double totalCost = quantity * pricePerUnit;
+        double usdBalance = portfolio.getBalance();
+
+        // Get current prices
+        List<CoinsResponseDto> coins = apiService.getCryptoData().getBody();
+        Map<AssetSymbol, Double> currentPrices = coins.stream()
+            .filter(c -> {
+                try {
+                    AssetSymbol.fromString(c.symbol());
+                    return c.currentPrice() != null;
+                } catch (IllegalArgumentException e) {
+                    return false; // skip unknown symbols
+                }
+            })
+            .collect(Collectors.toMap(
+                c -> AssetSymbol.fromString(c.symbol()),
+                CoinsResponseDto::currentPrice
+            ));
+
+        // Calculate current crypto value
+        Map<AssetSymbol, Double> holdings = portfolio.getTransactions().stream()
+            .collect(Collectors.groupingBy(Transaction::getAsset,
+                Collectors.summingDouble(t -> t.getType() == TransactionType.BUY ? t.getQuantity() : -t.getQuantity())));
+
+        double cryptoValue = holdings.entrySet().stream()
+            .mapToDouble(entry -> {
+                double price = currentPrices.getOrDefault(entry.getKey(), 0.0);
+                return price * entry.getValue();
+            })
+            .sum();
+
+        double totalValue = usdBalance + cryptoValue;
+
+        double invested = portfolio.getTransactions().stream()
+            .filter(t -> t.getType() == TransactionType.BUY)
+            .mapToDouble(t -> t.getPriceAtTransaction() * t.getQuantity())
+            .sum();
+
+        double profitLoss = totalValue - invested;
+
+        return new PerformanceDto(totalValue, profitLoss);
+    }
+
+    @Transactional
+    public void buyAsset(AssetSymbol asset, double quantity, double priceAtTransaction, UserDetails userDetails) {
+        ExchangeRates exchangeRates = getExchangeRatesFromService();
+        Long userId = ((User) userDetails).getId();
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+            .orElseThrow(() -> new RuntimeException("Portfolio not found"));
+
+        double totalCost = quantity * priceAtTransaction;
         if (portfolio.getBalance() < totalCost) {
-            throw new RuntimeException("Not enough USD balance");
+            throw new IllegalArgumentException("Insufficient USD balance to buy " + asset);
         }
 
         portfolio.setBalance(portfolio.getBalance() - totalCost);
-        Transaction transaction = new Transaction(portfolio, TransactionType.BUY, assetSymbol, quantity, pricePerUnit, LocalDateTime.now());
-        portfolio.getTransactions().add(transaction);
 
-        transactionRepository.save(transaction);
-        return portfolioRepository.save(portfolio);
+        Transaction tx = new Transaction(
+            portfolio,
+            TransactionType.BUY,
+            asset,
+            quantity,
+            priceAtTransaction,
+            LocalDateTime.now(),
+            exchangeRates
+        );
+
+        portfolio.getTransactions().add(tx);
+        portfolioRepository.save(portfolio);
     }
 
-    public Portfolio sellCrypto(Long portfolioId, AssetSymbol assetSymbol, double quantity, double pricePerUnit) {
-        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+    @Transactional
+    public void sellAsset(AssetSymbol asset, double quantity, double priceAtTransaction, UserDetails userDetails) {
+        Long userId = ((User) userDetails).getId();
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
             .orElseThrow(() -> new RuntimeException("Portfolio not found"));
-
-        double currentHolding = portfolio.getCryptoBalance(assetSymbol);
-        if (currentHolding < quantity) {
-            throw new RuntimeException("Not enough crypto balance");
+    
+        double assetHolding = getAssetBalance(asset, userDetails);
+        if (assetHolding < quantity) {
+            throw new IllegalArgumentException("Insufficient " + asset + " to sell. Current holding: " + assetHolding);
         }
-
-        double totalRevenue = quantity * pricePerUnit;
-        portfolio.setBalance(portfolio.getBalance() + totalRevenue);
-        Transaction transaction = new Transaction(portfolio, TransactionType.SELL, assetSymbol, quantity, pricePerUnit, LocalDateTime.now()); //latamRatesAtTransaction
-        portfolio.getTransactions().add(transaction);
-
-        transactionRepository.save(transaction);
-        return portfolioRepository.save(portfolio);
+    
+        double totalProceeds = quantity * priceAtTransaction;
+        portfolio.setBalance(portfolio.getBalance() + totalProceeds);
+    
+        ExchangeRates exchangeRates = getExchangeRatesFromService();
+    
+        Transaction tx = new Transaction(
+            portfolio,
+            TransactionType.SELL,
+            asset,
+            quantity,
+            priceAtTransaction,
+            LocalDateTime.now(),
+            exchangeRates
+        );
+    
+        portfolio.getTransactions().add(tx);
+        portfolioRepository.save(portfolio);
     }
 
-    public double getPortfolioValue(Long portfolioId, Map<AssetSymbol, Double> marketPrices) {
-        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+    public PortfolioOverviewDto getPortfolioOverview(UserDetails userDetails) {
+        Long userId = ((User) userDetails).getId();
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
             .orElseThrow(() -> new RuntimeException("Portfolio not found"));
-        return portfolio.getTotalValue(marketPrices);
-    } */
+    
+        List<CoinsResponseDto> coins = apiService.getCryptoData().getBody();
+    
+        Map<AssetSymbol, Double> currentPrices = coins.stream()
+            .filter(c -> {
+                try {
+                    AssetSymbol.fromString(c.symbol());
+                    return c.currentPrice() != null;
+                } catch (IllegalArgumentException e) {
+                    return false;
+                }
+            })
+            .collect(Collectors.toMap(
+                c -> AssetSymbol.fromString(c.symbol()),
+                CoinsResponseDto::currentPrice
+            ));
+    
+        Map<AssetSymbol, Double> holdings = portfolio.getTransactions().stream()
+            .collect(Collectors.groupingBy(Transaction::getAsset,
+                Collectors.summingDouble(t -> t.getType() == TransactionType.BUY ? t.getQuantity() : -t.getQuantity())));
+    
+        Map<AssetSymbol, Double> holdingValues = holdings.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                e -> currentPrices.getOrDefault(e.getKey(), 0.0) * e.getValue()
+            ));
+    
+        double cryptoValue = holdingValues.values().stream().mapToDouble(Double::doubleValue).sum();
+        double totalValue = portfolio.getBalance() + cryptoValue;
+    
+        double totalInvested = portfolio.getTransactions().stream()
+            .filter(t -> t.getType() == TransactionType.BUY)
+            .mapToDouble(t -> t.getPriceAtTransaction() * t.getQuantity())
+            .sum();
+    
+        double profitLoss = totalValue - totalInvested;
+        double profitLossPercentage = (totalValue - 1000.0) / 1000.0 * 100;
+
+    
+        return new PortfolioOverviewDto(
+            portfolio.getBalance(),
+            holdings,
+            holdingValues,
+            totalValue,
+            totalInvested,
+            profitLoss,
+            profitLossPercentage
+        );
+    }
 }

@@ -26,19 +26,24 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        // Obtener el token del header
+
+        System.out.println("====Running JwtAuthFilter on: " + request.getRequestURI());
         var authHeader = request.getHeader("Authorization");
-        if (authHeader != null) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
             var token = authHeader.replace("Bearer ", "");
-            var username = tokenService.getSubject(token); // extract username
-            if (username != null) {
-                // Token valido
-                var user = userRepository.findByUsername(username);
-                var authentication = new UsernamePasswordAuthenticationToken(user, null,
-                        user.getAuthorities()); // Forzamos un inicio de sesion
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            try {
+                var username = tokenService.getSubject(token);
+                if (username != null) {
+                    var user = userRepository.findByUsername(username);
+                    var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            } catch (Exception ex) {
+                System.out.println("====Invalid token: " + ex.getMessage());
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
         }
         filterChain.doFilter(request, response);
-    }
+    }   
 }

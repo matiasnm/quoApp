@@ -13,6 +13,8 @@ import lombok.*;
 @Table(name = "\"transactions\"")
 @Entity(name = "Transaction")
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Transaction {
     
     @Id
@@ -30,10 +32,10 @@ public class Transaction {
     private AssetSymbol asset;
 
     @Column(nullable = false)
-    private double quantity;
+    private Double quantity;
 
     @Column(nullable = false)
-    private double priceAtTransaction;
+    private Double priceAtTransaction;
 
     @Column(nullable = false)
     private LocalDateTime timestamp;
