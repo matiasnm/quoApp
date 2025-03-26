@@ -13,7 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
@@ -37,7 +37,7 @@ public class UserController {
     // Actualizar el nombre y teléfono del usuario
     @PutMapping("/update")
     public ResponseEntity<UserResponseDto> updateUser(
-            @RequestBody UserUpdateDto userDto,
+            @RequestBody @Valid UserUpdateDto userDto,
             @AuthenticationPrincipal UserDetails userDetails) {
         // Actualizar solo el nombre y teléfono del usuario
         return ResponseEntity.ok(userService.updateInfo(userDetails, userDto));
