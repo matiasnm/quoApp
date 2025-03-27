@@ -25,24 +25,19 @@ public class UserController {
 
     private final UserService userService;
 
-    // Obtener los detalles del usuario
-    @GetMapping("/{id}")
+    @GetMapping("/me")
     public ResponseEntity<UserResponseDto> get(
-        @PathVariable Long id,
         @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(userService.read(id, userDetails));
+        return ResponseEntity.ok(userService.read(userDetails));
     }
 
-    // Actualizar el nombre y teléfono del usuario
     @PutMapping("/update")
     public ResponseEntity<UserResponseDto> updateUser(
             @RequestBody @Valid UserUpdateDto userDto,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // Actualizar solo el nombre y teléfono del usuario
         return ResponseEntity.ok(userService.updateInfo(userDetails, userDto));
     }
 
-    // Actualizar el avatar del usuario
     @PutMapping("/update-avatar")
     public ResponseEntity<UserResponseDto> updateAvatar(
             @RequestParam String avatar,
@@ -50,7 +45,6 @@ public class UserController {
         return ResponseEntity.ok(userService.updateAvatar(userDetails, avatar));
     }
 
-    // Desactivar cuenta del usuario
     @DeleteMapping("/deactivate")
     public ResponseEntity<Void> deactivateAccount(@AuthenticationPrincipal UserDetails userDetails) {
         userService.deactivateAccount(userDetails);

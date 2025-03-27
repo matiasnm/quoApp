@@ -7,9 +7,6 @@ import com.nocountry.quo.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
-import java.util.Optional;
-
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,70 +19,36 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public UserResponseDto read(Long id, UserDetails userDetails) {
+    private User getAuthenticatedUser(UserDetails userDetails) {
         Long userId = ((User) userDetails).getId();
-
-        // Validar si el usuario que hace la solicitud es el mismo que el del ID proporcionado
-        if (id != userId) {
-            throw new AccessDeniedException("Unauthorized.");
-        }
-
-        Optional<User> userOptional = userRepository.findById(id);
-
-        // Comprobar si el usuario existe en la base de datos
-        if (userOptional.isEmpty()) {
-            throw new EntityNotFoundException("User with ID=" + id + " not found.");
-        }
-
-        User user = userOptional.get();
-        return new UserResponseDto(user);  // Retornar el DTO con los datos del usuario
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new EntityNotFoundException("User not found."));
+    }
+    
+    public UserResponseDto read(UserDetails userDetails) {
+        User user = getAuthenticatedUser(userDetails);
+        return new UserResponseDto(user);
     }
 
-
-    // Método para actualizar el nombre, mail y teléfono del usuario
     @Transactional
     public UserResponseDto updateInfo(UserDetails userDetails, UserUpdateDto userDto) {
-
-        Long userId = ((User) userDetails).getId();
-
-        // Buscar al usuario en la base de datos
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        // Actualizar los campos de nombre y teléfono
+        User user = getAuthenticatedUser(userDetails);
         user.setUsername(userDto.username());
         user.setPhone(userDto.phone());
         user.setMail(userDto.mail());
-
-        // Guardar los cambios en la base de datos
         return new UserResponseDto(userRepository.save(user));
     }
 
-    // Método para actualizar el avatar del usuario
     @Transactional
     public UserResponseDto updateAvatar(UserDetails userDetails, String avatar) {
-
-        Long userId = ((User) userDetails).getId();
-
-        // Buscar al usuario en la base de datos
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        // Actualizar el campo del avatar
+        User user = getAuthenticatedUser(userDetails);
         user.setAvatar(avatar);
-
-        // Guardar los cambios en la base de datos
         return new UserResponseDto(userRepository.save(user));
     }
 
-    // Método para eliminar la cuenta del usuario
     @Transactional
     public void deactivateAccount(UserDetails userDetails) {
-
-        Long userId = ((User) userDetails).getId();
-
-        // Buscar al usuario en la base de datos
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        // Desactiva el usuario
+        User user = getAuthenticatedUser(userDetails);
         user.setActive(false);
         userRepository.save(user);
     }
