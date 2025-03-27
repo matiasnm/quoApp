@@ -46,11 +46,7 @@ Representa el balance y la tenencia de activos
     private final CoinGeckoApiService apiService;
 
     private ExchangeRates getExchangeRatesFromService() {
-        RatesRespondDto dto = exchangerateApiService.getLatestExchangeRates()
-            .getBody();
-        if (dto == null) {
-            throw new RuntimeException("Failed to retrieve exchange rates");
-        }
+        RatesRespondDto dto = exchangerateApiService.getLatestExchangeRates();
         return new ExchangeRates(LocalDate.now(), dto.conversion_rates());
     }
 
