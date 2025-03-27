@@ -71,12 +71,20 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DisabledException.class)
-        public ResponseEntity<ProblemDetail> handleDisabled(DisabledException ex, HttpServletRequest request) {
-            ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
-            problem.setTitle("Account Disabled");
-            problem.setDetail("Your account is disabled. Please contact support.");
-            problem.setProperty("instance", request.getRequestURI());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
-        }
+    public ResponseEntity<ProblemDetail> handleDisabled(DisabledException ex, HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        problem.setTitle("Account Disabled");
+        problem.setDetail("Your account is disabled. Please contact support.");
+        problem.setProperty("instance", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
+    }
 
+    @ExceptionHandler(ExternalApiException.class)
+    public ResponseEntity<ProblemDetail> handleExternalApi(ExternalApiException ex, HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        problem.setTitle("External API Error");
+        problem.setDetail(ex.getMessage());
+        problem.setProperty("instance", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problem);
+    }
 }

@@ -30,7 +30,6 @@ public class UserController {
     public ResponseEntity<UserResponseDto> get(
         @PathVariable Long id,
         @AuthenticationPrincipal UserDetails userDetails) {
-
         return ResponseEntity.ok(userService.read(id, userDetails));
     }
 
