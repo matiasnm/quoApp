@@ -1,11 +1,11 @@
 package com.nocountry.quo.model.User;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 
 public record UserLoginRequestDto(
-    @NotNull
+    @NotBlank
     String username,
-    @NotNull 
+    @NotBlank 
     String password) {
     
 }

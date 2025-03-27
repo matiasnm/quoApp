@@ -1,78 +1,82 @@
 package com.nocountry.quo.exception;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 
-@RestControllerAdvice // Indica que esta clase manejará excepciones globalmente
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * Este método maneja excepciones de validación de los argumentos en el cuerpo de la solicitud.
-     * Se activa cuando una solicitud contiene datos inválidos (como parámetros faltantes o incorrectos) en el cuerpo.
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<List<ErrorDataRecord>> error400(MethodArgumentNotValidException e) {
-        // Convierte los errores de los campos en una lista de objetos ErrorDataRecord
-        var errores = e.getFieldErrors().stream()
-                .map(ErrorDataRecord::new)  // Mapea cada FieldError a un ErrorDataRecord
-                .toList();
+    public ResponseEntity<ProblemDetail> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setTitle("Validation Failed");
+        problem.setDetail("One or more fields are invalid.");
+        problem.setProperty("instance", request.getRequestURI());
 
-        // Retorna una respuesta 400 (Bad Request) con los errores de validación
-        return ResponseEntity.badRequest().body(errores);
+        Map<String, String> fieldErrors = ex.getFieldErrors().stream()
+                .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage));
+
+        problem.setProperty("fieldErrors", fieldErrors);
+        return ResponseEntity.badRequest().body(problem);
     }
 
-    /**
-     * Este método maneja excepciones de tipo IllegalArgumentException.
-     * para los parámetros de la solicitud que no son válidos de alguna manera.
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> illegalArgument(IllegalArgumentException e) {
-        // Retorna una respuesta 400 (Bad Request) con el mensaje de error
-        return ResponseEntity.badRequest().body(e.getMessage());
+    @ExceptionHandler({IllegalArgumentException.class, ValidationException.class, EntityNotFoundException.class})
+    public ResponseEntity<ProblemDetail> handleBadRequest(RuntimeException ex, HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setTitle("Bad Request");
+        problem.setDetail(ex.getMessage());
+        problem.setProperty("instance", request.getRequestURI());
+        return ResponseEntity.badRequest().body(problem);
     }
 
-    /**
-     * Este método maneja excepciones de validación personalizadas.
-     * respuesta con el mensaje de error.
-     */
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<String> validationError(ValidationException e) {
-        // Retorna una respuesta 400 (Bad Request) con el mensaje de error
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    /**
-     * Este método maneja excepciones donde una entidad no se encuentra en la base de datos.
-     * respuesta con el mensaje de error y un código de estado 400.
-     */
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<String> entityNotFound(EntityNotFoundException e) {
-        // Retorna una respuesta 400 (Bad Request) con el mensaje de error
-        return ResponseEntity.badRequest().body(e.getMessage());
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ProblemDetail> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
+        problem.setTitle("Unauthorized");
+        problem.setDetail("Invalid username or password");
+        problem.setProperty("instance", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<String> handleAccessDeniedException(AccessDeniedException ex) {
-        return new ResponseEntity<>("Access Denied: " + ex.getMessage(), HttpStatus.FORBIDDEN);
+    public ResponseEntity<ProblemDetail> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        problem.setTitle("Forbidden");
+        problem.setDetail(ex.getMessage());
+        problem.setProperty("instance", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
     }
 
-    /**
-     * Esta clase interna se usa para representar los errores de validación de los campos.
-     * Cada error contiene el nombre del campo y el mensaje de error asociado.
-     */
-    private record ErrorDataRecord(String field, String error) {
-        // Constructor que convierte un FieldError en un ErrorDataRecord
-        public ErrorDataRecord(FieldError error) {
-            this(error.getField(), error.getDefaultMessage());
-        }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ProblemDetail> handleUnexpected(Exception ex, HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        problem.setTitle("Unexpected Error");
+        problem.setDetail(ex.getMessage());
+        problem.setProperty("instance", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
     }
+
+    @ExceptionHandler(DisabledException.class)
+        public ResponseEntity<ProblemDetail> handleDisabled(DisabledException ex, HttpServletRequest request) {
+            ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+            problem.setTitle("Account Disabled");
+            problem.setDetail("Your account is disabled. Please contact support.");
+            problem.setProperty("instance", request.getRequestURI());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
+        }
+
 }
