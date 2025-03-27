@@ -1,64 +1,144 @@
-# NO SUBIR AL GIT:
-**- CARPETA DE COMPILACION:**
-/target
+# QuoApp - Backend
 
-**- CARPETA OCULTA DE MAVEN:**
-.mvn
+> 🔧 **Status**: Deployed and currently in development/testing phase.
 
-**- CARPETA OCULTA DE IDE:**
-.idea
-.vscode
+## 👤 Preloaded Users for Testing
+
+Use the following users to authenticate and test the API:
+
+| Username | Password      |
+|----------|---------------|
+| alice    | `password123` |
+| bob      | `securePass!` |
+| eve      | `mySecret#`   |
 
 ---
 
-## API DOCS
+## 🚀 Base URL
 
-[Quo API](https://resulting-rattlesnake-matiasnm-db6f89e2.koyeb.app/swagger-ui/index.html)
+https://resulting-rattlesnake-matiasnm-db6f89e2.koyeb.app
 
-## COMANDOS cURL AL SERVER
 
-### ENDPOINT /coins
+## 📚 API Documentation
 
-```bash
-$ CURL -X GET resulting-rattlesnake-matiasnm-db6f89e2.koyeb.app/coins
-```
+Full Swagger UI is available here:  
+[Swagger UI](https://resulting-rattlesnake-matiasnm-db6f89e2.koyeb.app/swagger-ui/index.html#/)
 
-### ENDPOINT /login
+---
 
-```bash
-curl -X POST "https://resulting-rattlesnake-matiasnm-db6f89e2.koyeb.app/login" -H "Content-Type: application/json" -d '{"username": "alice", "password": "password123"}'
+## ✅ Tech Stack
 
-{"jwTtoken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJxdW8iLCJzdWIiOiJhbGljZSIsImlkIjoxLCJleHAiOjE3NDA1MTc5NDJ9.UrRCDJRq_PaAIAEOjOJB-ssyHtt1QyKo3MnVJ10pad4"}
-```
+- Java 17+
+- Spring Boot
+- Spring Security (JWT)
+- PostgreSQL (hosted on [Neon](https://neon.tech))
+- RESTful APIs with OpenAPI 3.1
+- Deployed on [Koyeb](https://koyeb.com)
 
-### ENDPOINT /users/1
+---
 
-```bash
-curl -X GET "https://resulting-rattlesnake-matiasnm-db6f89e2.koyeb.app/users/1" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJxdW8iLCJzdWIiOiJhbGljZSIsImlkIjoxLCJleHAiOjE3NDA1MTc5NDJ9.UrRCDJRq_PaAIAEOjOJB-ssyHtt1QyKo3MnVJ10pad4" -d '{"username": "alice", "password": "password123"}'
+## 🔐 Authentication
 
-;14d0ed15-6d0b-4711-80ab-dbdf2a89e1af{"username":"alice","mail":"alice@example.com"}
-```
+All protected endpoints require a **Bearer JWT token**.  
+Use `/login` to authenticate and receive your token.
 
-## BASE DE DATOS (AIVEN.COM) 
+---
 
-- alice   → Contraseña: password123
+## 📦 Main API Endpoints
 
-- bob     → Contraseña: securePass!
+### 🔑 Auth
 
-- eve     → Contraseña: mySecret#
+- `POST /login` – Authenticate and receive JWT token.
 
-## ENDPOINT LOCALES
+### 👤 User
 
-### Conseguir TOKEN
+- `GET /users/me`
+- `PUT /users/update`
+- `PUT /users/update-avatar?avatar={url}`
+- `DELETE /users/deactivate`
 
-POST localhost:8080/login
+### 💸 Portfolio
 
-body json:
-{
-    "username": "alice",
-    "password": "password123"
-}
+- `POST /portfolio/trade`
+- `GET /portfolio/overview`
+- `GET /portfolio/performance`
+- `GET /portfolio/history`
+- `GET /portfolio/assets/{asset}`
 
-### GET usuario
+### 📈 Market Data
 
-GET localhost:8080/users/1
+- `GET /coins`
+- `GET /rates`
+
+---
+
+## 🗄️ Database Schema (PostgreSQL on Neon)
+
+### Table: `users`
+
+| Column   | Type         | Constraints               |
+|----------|--------------|---------------------------|
+| id       | bigint       | PK, auto-increment        |
+| username | varchar(255) | NOT NULL                  |
+| mail     | varchar(255) | NOT NULL                  |
+| phone    | varchar(255) |                           |
+| password | varchar(255) | NOT NULL (BCrypt encoded) |
+| avatar   | varchar(255) |                           |
+| active   | boolean      |                           |
+
+---
+
+### Table: `portfolios`
+
+| Column   | Type    | Constraints                  |
+|----------|---------|------------------------------|
+| id       | bigint  | PK, auto-increment           |
+| balance  | double  |                              |
+| user_id  | bigint  | UNIQUE, FK → users(id)       |
+
+---
+
+### Table: `transactions`
+
+| Column              | Type         | Constraints                        |
+|---------------------|--------------|------------------------------------|
+| id                  | bigint       | PK, auto-increment                 |
+| price_at_transaction| double       | NOT NULL                           |
+| quantity            | double       | NOT NULL                           |
+| timestamp           | timestamp    | NOT NULL                           |
+| type                | varchar(255) | CHECK ["BUY", "SELL"]              |
+| asset               | varchar(255) | CHECK ["BTC", ..., "DOT"]          |
+| portfolio_id        | bigint       | FK → portfolios(id)                |
+| exchange_rate_id    | bigint       | FK → exchange_rates(id), nullable |
+
+---
+
+### Table: `exchange_rates`
+
+| Column | Type | Constraints        |
+|--------|------|--------------------|
+| id     | bigint | PK, auto-increment |
+| date   | date   | UNIQUE, NOT NULL  |
+
+---
+
+### Table: `exchange_rate_details`
+
+| Column           | Type           | Constraints                                   |
+|------------------|----------------|-----------------------------------------------|
+| exchange_rate_id | bigint         | FK → exchange_rates(id), part of composite PK |
+| rates_key        | varchar(255)   | ENUM: ARS, BRL, MXN, COP (part of PK)         |
+| rate             | double         | NOT NULL                                      |
+
+---
+
+## 🧭 Entity Relationship Diagram (ERD)
+
+```text
+users
+│
+├──< portfolios (1:1)
+      │
+      ├──< transactions (1:N)
+            └─── exchange_rates (0..1:1)
+                  └──< exchange_rate_details (1:N)
