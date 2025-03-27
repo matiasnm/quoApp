@@ -20,7 +20,8 @@ public class CoinsController {
 
     @GetMapping("")
     public ResponseEntity<List<CoinsResponseDto>> get() {
-        return apiService.getCryptoData();
+        List<CoinsResponseDto> coins = apiService.getCryptoData();
+        return ResponseEntity.ok(coins);
     }
     
 }
