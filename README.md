@@ -1,6 +1,6 @@
 # QuoApp - Backend
-
 > 🔧 **Status**: Deployed and currently in development/testing phase.
+![QuoApp](README.png)
 
 ## 👤 Preloaded Users for Testing
 
